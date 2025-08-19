@@ -193,4 +193,4 @@ Planned Additions: Email reminders, calendar integration, quote history
 
 ## Final Notes
 
-This project is a practical demonstration of how AI can be used responsibly to support mental health through empathetic, intelligent, and structured conversations. It leverages advanced AI techniques while remaining lightweight enough to complete within a week.
+This project shows how AI can responsibly support mental health by enabling empathetic, safe, and structured conversations. It balances innovation with ethical care, offering a lightweight yet impactful solution built within a short timeframe. This work was created as part of the Kalvium GenAI Workshops, showcasing how AI can be both practical and compassionate.
