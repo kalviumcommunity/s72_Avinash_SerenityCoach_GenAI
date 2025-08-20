@@ -428,3 +428,78 @@ inputs_runtime:
 - **Keep required slots minimal**: Ask targeted clarifying questions only when needed.
 - **Limit context items**: Prefer 2–5 high-signal items in `retrieved_knowledge`.
 - **Match output_contract**: Enforce schema/format to keep responses consistent.
+
+## Chain-of-Thought Prompting (Safe)
+
+### What is Chain-of-Thought prompting?
+
+Chain-of-Thought (CoT) prompting is a technique that encourages the model to reason through problems step-by-step before giving the final answer. It improves accuracy on tasks that require multi-step planning or inference. In production, we keep this reasoning hidden and only show the concise final output.
+
+### How we use it in SerenityCoach
+
+- **Motivation mode**: The model plans internally how to map mood → quote → small action, checks time/hobby alignment, and performs a lightweight safety risk scan. It then outputs only the JSON.
+- **Live chat mode**: The model silently reasons about validation, selects one or two most helpful tips, and responds in 2–4 short sentences without exposing the internal reasoning.
+
+### Safe CoT prompt add-ons
+
+Use these add-ons in your prompts to get the benefits of CoT while preventing reasoning leakage.
+
+#### Motivation Mode (append to system prompt)
+
+```text
+Deliberate reasoning (hidden): Think step-by-step to select a mood-aligned quote and one practical micro‑action. Consider user context (energy, stress, sleep, hobbies, time). Check for risk signals and, if present, add a brief, compassionate resource note. Do not include your reasoning or steps in the output.
+Return only the JSON that matches the required schema.
+```
+
+Or as structured guidance (for template-based prompts):
+
+```yaml
+reasoning_guidance:
+  style: "step-by-step"
+  visibility: "hidden"
+  steps:
+    - "Extract key signals (mood, stress, energy, time, hobbies)"
+    - "Select quote aligned with mood and constraints"
+    - "Plan one micro‑action feasible within time"
+    - "Optionally add hobby-aligned idea if provided"
+    - "Run a light risk check; if triggered, add a short resources note"
+output_policy:
+  reveal_reasoning: false
+  final_format: "json"
+```
+
+#### Live Chat Mode (append to system prompt)
+
+```text
+Use an internal scratchpad to reason about the user’s message and pick at most one clarifying question only if needed. Offer one or two practical tips. Do not reveal your chain-of-thought; reply in 2–4 short sentences.
+```
+
+### Minimal example (safe output only)
+
+Input:
+
+```text
+Mood: "overwhelmed"
+Energy: 4, Stress: 7, Time: 10, Hobbies: reading
+```
+
+Output (no reasoning shown):
+
+```json
+{
+  "mood": "overwhelmed",
+  "quote": "Do what you can, with what you have, where you are.",
+  "author": "Theodore Roosevelt",
+  "suggested_action": "Set a 10‑minute timer, jot down the top 3 tasks, and do just the first small step.",
+  "hobby_suggestion": "Read 2 pages from a calming book as a reset.",
+  "resources": "If stress feels unmanageable, consider reaching out to someone you trust or local support services."
+}
+```
+
+### Short video script (1–2 minutes)
+
+- **What is CoT**: Chain-of-Thought prompting guides the model to think step-by-step, improving multi-step planning and reasoning.
+- **Why it helps here**: SerenityCoach plans a supportive quote and a small, doable action while checking constraints like time, energy, and safety signals.
+- **How we keep it safe**: We instruct the model to keep reasoning hidden and only return a concise final answer (JSON in motivation mode; brief text in chat).
+- **Demo**: Show the system prompt with the CoT add-on; run a sample input (e.g., mood="overwhelmed"); highlight that only the final JSON is returned—no reasoning text.
+- **Wrap-up**: CoT boosts quality without exposing internal thought processes; it keeps replies helpful, concise, and safe.
