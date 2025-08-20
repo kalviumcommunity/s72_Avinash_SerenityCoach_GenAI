@@ -262,3 +262,169 @@ Optional context (if available): stress={stress}, energy={energy}, sleep={sleep}
 - Task: Motivation mode → produce structured JSON; Chat mode → concise, supportive replies with practical tips.
 - Format: JSON-only for motivation mode; 2–4 sentence text for chat mode; at most one clarifying question.
 - Constraints: No diagnosis/medical advice; risk detection with compassionate safety guidance; concise style; hobby/time alignment; region-agnostic helpline guidance.
+
+## Dynamic Prompting
+
+Use this dynamic prompting template to adapt the assistant’s behavior at runtime using user profile, retrieved knowledge, and tool availability.
+
+### Template (ready to reuse)
+
+```yaml
+system:
+  role: "{{agent_role}}"
+  mission: "{{goal}}"
+  success_criteria:
+    - "{{criterion_1}}"
+    - "{{criterion_2}}"
+    - "{{criterion_3}}"
+
+  user_profile:
+    persona: "{{user_persona}}"
+    expertise_level: "{{user_expertise}}"
+    preferences:
+      tone: "{{tone}}"
+      format: "{{preferred_format}}"
+
+  constraints:
+    - "Stay within scope of {{scope}}"
+    - "Follow {{style_guide}}"
+    - "Time/Latency budget: {{latency_budget}}"
+    - "Avoid disallowed content: {{disallowed_content}}"
+
+  dynamic_context:
+    memory_summary: "{{memory_summary_optional}}"
+    retrieved_knowledge:
+      - "{{context_snippet_1_optional}}"
+      - "{{context_snippet_2_optional}}"
+    recent_activity_summary: "{{recent_activity_optional}}"
+
+  tools_available:
+    - name: "{{tool_name_1}}"
+      description: "{{tool_description_1}}"
+      io: { input: "{{tool_input_1}}", output: "{{tool_output_1}}"}
+    - name: "{{tool_name_2_optional}}"
+      description: "{{tool_description_2_optional}}"
+      io: { input: "{{tool_input_2_optional}}", output: "{{tool_output_2_optional}}"}
+
+  inputs_schema:
+    required_slots:
+      - "{{slot_1}}"
+      - "{{slot_2}}"
+    optional_slots:
+      - "{{slot_opt_1}}"
+      - "{{slot_opt_2}}"
+    validations:
+      - slot: "{{slot_1}}"
+        rule: "{{validation_rule_1}}"
+      - slot: "{{slot_2}}"
+        rule: "{{validation_rule_2}}"
+
+  examples_few_shot:
+    - user: "{{example_user_1}}"
+      assistant: "{{example_assistant_1}}"
+    - user: "{{example_user_2_optional}}"
+      assistant: "{{example_assistant_2_optional}}"
+
+assistant_guidance:
+  - "If any required slot is missing or invalid, ask up to 3 targeted clarifying questions before proceeding."
+  - "Use retrieved_knowledge when relevant; cite by short labels like [K1], [K2]."
+  - "Prefer stepwise structure in the final answer without revealing internal chain-of-thought."
+  - "If tools can improve accuracy, propose the plan and the specific tool calls needed."
+  - "If context is empty, proceed best-effort and note assumptions explicitly."
+  - "Keep output concise, actionable, and formatted per 'output_contract'."
+
+output_contract:
+  type: "{{output_type}}"        # e.g., 'markdown' or 'json'
+  schema_or_style:
+    if: "json"
+    then:
+      properties:
+        answer: string
+        assumptions: array
+        steps: array
+        follow_ups: array
+        citations: array
+      required: ["answer"]
+    else_if: "markdown"
+    then:
+      style:
+        - "Use '###' headings"
+        - "Bulleted lists with bold labels"
+        - "Code blocks only for concrete commands/templates"
+
+inputs_runtime:
+  slot_values:
+    "{{slot_1}}": "{{value_1}}"
+    "{{slot_2}}": "{{value_2}}"
+    "{{slot_opt_1}}": "{{value_opt_1_optional}}"
+    "{{slot_opt_2}}": "{{value_opt_2_optional}}"
+```
+
+### Minimal usage example (filled)
+
+```yaml
+system:
+  role: "Calm, practical wellness coach"
+  mission: "Design a 7‑day, low-friction mindfulness plan for a busy professional"
+  success_criteria:
+    - "Daily actions fit into 10–15 minutes"
+    - "Clear tracking method"
+    - "Gentle, encouraging tone"
+
+  user_profile:
+    persona: "Stressed product manager"
+    expertise_level: "Beginner in mindfulness"
+    preferences:
+      tone: "supportive"
+      format: "markdown checklist"
+
+  constraints:
+    - "No medical diagnosis"
+    - "Respect workplace time constraints"
+    - "Latency budget: fast"
+
+  dynamic_context:
+    memory_summary: "User prefers audio over text; commutes 30 mins."
+    retrieved_knowledge:
+      - "[K1] 4-7-8 breathing basics"
+      - "[K2] Habit stacking with existing routines"
+    recent_activity_summary: "User completed a 3‑day breathwork trial"
+
+  tools_available:
+    - name: "Timer"
+      description: "Start a 10‑minute timer"
+      io: { input: "minutes:int", output: "confirmation" }
+
+  inputs_schema:
+    required_slots: ["work_hours", "commute_mode"]
+    optional_slots: ["sleep_window"]
+    validations:
+      - slot: "work_hours"
+        rule: "range within 6–12 hours"
+
+assistant_guidance:
+  - "If commute_mode is missing, ask 1 question."
+  - "Cite [K1], [K2] when used."
+  - "Suggest Timer tool when timing is helpful."
+
+output_contract:
+  type: "markdown"
+  schema_or_style:
+    then:
+      style:
+        - "Use '###' headings"
+        - "Bold labels in bullets"
+        - "Short checklists"
+
+inputs_runtime:
+  slot_values:
+    work_hours: "9–6"
+    commute_mode: "train"
+```
+
+### Quick Tips
+
+- **Replace placeholders dynamically**: Populate from app state, RAG results, and user slots.
+- **Keep required slots minimal**: Ask targeted clarifying questions only when needed.
+- **Limit context items**: Prefer 2–5 high-signal items in `retrieved_knowledge`.
+- **Match output_contract**: Enforce schema/format to keep responses consistent.
