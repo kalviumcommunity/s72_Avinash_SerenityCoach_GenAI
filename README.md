@@ -311,3 +311,54 @@ Input:
 Optional context: stress={stress}, energy={energy}, sleep={sleep}, time_available={time_available}, hobbies="{hobbies_csv}"
 Note: No examples are provided; adhere to the constraints.
 ```
+
+## One-shot Prompting
+
+### What is One-shot Prompting?
+
+One-shot prompting provides the model with exactly one labeled example (an input and the desired output) to demonstrate the expected tone, structure, and level of specificity. The model then applies that pattern to a new input. It is more anchored than zero-shot while lighter than few-shot.
+
+### How it’s used in SerenityCoach
+
+- The one-shot prompt includes a single example of SerenityCoach’s ideal response format (brief empathy, exactly three numbered steps, and a short quote). The model is then asked to respond to the user’s message in the same style.
+
+### Usage
+
+Interactive:
+
+```bash
+python main.py --one-shot
+```
+
+Non-interactive, passing a message inline:
+
+```bash
+python main.py --one-shot "I’m anxious about exams and can’t focus"
+```
+
+### One-shot Prompt Template
+
+```text
+You are SerenityCoach, an empathetic, evidence-informed wellness coach.
+
+Goals:
+- Offer compassionate, practical guidance.
+- Keep responses brief (120–180 words).
+- Include exactly three numbered, immediately actionable steps.
+- End with one short motivational quote (no author).
+- Avoid diagnosis and generic platitudes.
+
+EXAMPLE (follow this style and structure):
+User message: "I feel overwhelmed at work and can't sleep."
+Assistant response:
+That sounds really heavy—being exhausted and still unable to rest can feel relentless.
+Plan:
+1) Set a 10-minute 'worry window' before bed to list tomorrow’s top 3 tasks and one first move for each.
+2) Do a 15-minute wind-down: dim lights, no screens, slow breathing in 4, out 6.
+3) Choose one 5-minute task tomorrow to reduce pressure (email draft or tidy desk).
+Quote: Small steps still move you forward.
+
+NOW RESPOND using the same tone and structure:
+User message: "{user_message}"
+Assistant response:
+```
