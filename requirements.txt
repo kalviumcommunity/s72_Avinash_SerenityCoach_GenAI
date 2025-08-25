@@ -1,0 +1,4 @@
+# This project currently uses only Python standard library for demo prompts.
+# Add your LLM SDK here, e.g.:
+# google-generativeai>=0.7.2
+# openai>=1.40.0 
