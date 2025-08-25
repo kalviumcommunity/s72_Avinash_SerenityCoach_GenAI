@@ -8,6 +8,8 @@ from dynamic_prompter import (
     build_chat_user_prompt,
 )
 
+from llm_client import chat_completion
+
 
 def print_section(title: str, content: str) -> None:
     line = "=" * len(title)
@@ -32,6 +34,11 @@ def run_motivation_flow(args: argparse.Namespace) -> None:
     print_section("[Motivation] User Prompt", user_prompt)
     print("[Note] Integrate these prompts with your LLM call (e.g., Gemini/OpenAI) and request JSON-only output.\n")
 
+    if args.run:
+        print("[Motivation] Running LLM call...")
+        reply = chat_completion(system_prompt, user_prompt, provider=args.provider, model=args.model)
+        print_section("[Motivation] Model Reply", reply)
+
 
 def run_chat_flow(args: argparse.Namespace) -> None:
     system_prompt = build_chat_system_prompt()
@@ -48,6 +55,11 @@ def run_chat_flow(args: argparse.Namespace) -> None:
     print_section("[Chat] User Prompt", user_prompt)
     print("[Note] Pipe these prompts into your chat completion API and display the model's short reply.\n")
 
+    if args.run:
+        print("[Chat] Running LLM call...")
+        reply = chat_completion(system_prompt, user_prompt, provider=args.provider, model=args.model)
+        print_section("[Chat] Model Reply", reply)
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SerenityCoach CLI with safe CoT prompting")
@@ -62,6 +74,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_mot.add_argument("--sleep", type=int, default=None)
     p_mot.add_argument("--hobbies", type=str, default=None)
     p_mot.add_argument("--time", type=int, default=None, help="Minutes available")
+    p_mot.add_argument("--run", action="store_true", help="Execute an LLM call and print reply with token usage")
 
     # Chat mode
     p_chat = subparsers.add_parser("chat", help="Build prompts for live chat mode")
@@ -71,6 +84,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_chat.add_argument("--sleep", type=int, default=None)
     p_chat.add_argument("--hobbies", type=str, default=None)
     p_chat.add_argument("--time", type=int, default=None, help="Minutes available")
+    p_chat.add_argument("--run", action="store_true", help="Execute an LLM call and print reply with token usage")
+
+    # Global provider/model options
+    parser.add_argument("--provider", type=str, default=None, help="LLM provider: openai or gemini")
+    parser.add_argument("--model", type=str, default=None, help="Override model name")
 
     return parser
 
